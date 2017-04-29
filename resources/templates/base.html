@@ -4,38 +4,14 @@
     <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <META name="viewport" content="width=device-width, initial-scale=1">
     <title>Welcome to sandy</title>
-
     <!-- styles -->
-    {% style "/assets/bootstrap/css/bootstrap.min.css" %}
-    {% style "/assets/font-awesome/css/font-awesome.min.css" %}
-
-    {% style "/css/screen.css" %}
+    {% style "/css/semantic.css" %}
   </head>
   <body>
       <!-- navbar -->
-      <nav class="navbar navbar-light bg-faded" role="navigation">
-          <button class="navbar-toggler hidden-sm-up"
-                  type="button"
-                  data-toggle="collapse"
-                  data-target="#collapsing-navbar">
-              &#9776;
-          </button>
-          <div class="collapse navbar-toggleable-xs" id="collapsing-navbar">
-              <a class="navbar-brand" href="{{servlet-context}}/">sandy</a>
-              <ul class="nav navbar-nav">
-                  <li class="nav-item">
-                      <a href="{{servlet-context}}/"
-                         class="navbar-brand{% ifequal page "home.html" %} active{%endifequal%}">
-                      home
-                      </a>
-                  </li>
-                  <li class="nav-item">
-                      <a href="{{servlet-context}}/about"
-                         class="nav-link{% ifequal page "about.html" %} active{%endifequal%}">
-                      about
-                      </a>
-                  </li>
-              </ul>
+      <nav class="ui inverted menu">
+          <div class="ui container">
+              <a href="/" class="item">Home</a>
           </div>
       </nav>
 
@@ -46,8 +22,6 @@
 
     <!-- scripts -->
     {% script "/assets/jquery/jquery.min.js" %}
-    {% script "/assets/tether/dist/js/tether.min.js" %}
-    {% script "/assets/bootstrap/js/bootstrap.min.js" %}
 
     <script type="text/javascript">
       var context = "{{servlet-context}}";
