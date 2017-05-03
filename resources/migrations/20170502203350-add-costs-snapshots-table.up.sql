@@ -1,0 +1,23 @@
+CREATE TABLE cost_snapshots (
+id SERIAL PRIMARY KEY,
+snapshot_id int NOT NULL,
+record_type varchar(255),
+record_id int NOT NULL,
+billing_period_start_date date,
+billing_period_end_date date,
+invoice_date date,
+product_code varchar(255),
+product_name varchar(255),
+usage_type varchar(255),
+operation varchar(255),
+rate_id varchar(255),
+item_description varchar(255),
+usage_start_date date,
+usage_end_date date,
+usage_quantity float(3),
+blended_rate float(3),
+cost_before_tax float(3),
+credits float(3),
+total_cost float(3),
+created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
