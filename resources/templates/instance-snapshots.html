@@ -9,7 +9,10 @@
             <thead>
                 <tr>
                     <th>Instance id</th>
+                    <th>Instance type</th>
                     <th>Project</th>
+                    <th>Name</th>
+                    <th>Stages</th>
                     <th>Availability zone</th>
                 </tr>
             </thead>
@@ -18,7 +21,10 @@
                     {% for row in snapshot-rows %}
                     <tr>
                         <td>{{row.instance_id}}</td>
+                        <td>{{row.instance_type}}</td>
                         <td>{{row.project}}</td>
+                        <td>{{row.name}}</td>
+                        <td>{{row.stages}}</td>
                         <td>{{row.availability_zone}}</td>
                     </tr>
                     {% endfor %}
