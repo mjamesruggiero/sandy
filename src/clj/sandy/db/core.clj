@@ -154,6 +154,12 @@
 ;;     :total_cost 1.2
 ;;     }))
 
+;; (defn f []
+;;   (create-snapshot!
+;;    {:table_name "costs"
+;;     :snapshot_id "fake-snapshot-guid"
+;;     :title "snapshot taken on on 2017-05-05"}))
+
 ;; (try
 ;;   (f)
 ;;      (catch BatchUpdateException se (str (.getNextException se)))

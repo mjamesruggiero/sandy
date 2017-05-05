@@ -104,3 +104,16 @@ FROM cost_snapshots
 WHERE id = :id
 ORDER by id DESC
 LIMIT 1
+
+-- name: create-snapshot!
+-- creates a new snapshot record
+INSERT INTO snapshots (table_name, snapshot_id, title)
+VALUES (:table_name, :snapshot_id, :title) 
+
+-- name: find-snapshot
+-- creates a new cost snapshot record
+SELECT snapshots.*
+FROM snapshots.*
+WHERE id = :id
+ORDER by id DESC
+LIMIT 1
