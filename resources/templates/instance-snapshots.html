@@ -1,0 +1,29 @@
+{% extends "base.html" %} {% block content %}
+<div class="ui container">
+    <h1 class="ui header">Instance snapshot {{id}}</h1>
+</div>
+
+<div class="container">
+    <div class="html ui top attached segment">
+        <table class="ui celled striped table">
+            <thead>
+                <tr>
+                    <th>Instance id</th>
+                    <th>Project</th>
+                    <th>Availability zone</th>
+                </tr>
+            </thead>
+            <tbody>
+                <td class="messages">
+                    {% for row in snapshot-rows %}
+                    <tr>
+                        <td>{{row.instance_id}}</td>
+                        <td>{{row.project}}</td>
+                        <td>{{row.availability_zone}}</td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

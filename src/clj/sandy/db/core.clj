@@ -88,3 +88,19 @@
   (sql-value [value] (to-pg-json value))
   IPersistentVector
   (sql-value [value] (to-pg-json value)))
+
+;; (defn f
+;;   []
+;;   (create-instance-snapshot!
+;;    {:snapshot_id "fake-snapshot-id"
+;;     :instance_type "m4.xlarge"
+;;     :instance_id "i-123456"
+;;     :project "asap"
+;;     :name "asap staging autoscale"
+;;     :stages "staging"
+;;     :availability_zone "us-west-2a"}))
+
+;; (try
+;;   (f)
+;;      (catch BatchUpdateException se (str (.getNextException se)))
+;;      (finally (str "Release some resource")))
