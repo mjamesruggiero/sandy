@@ -1,0 +1,61 @@
+{% extends "base.html" %} {% block content %}
+<div class="ui container">
+    <h1 class="ui header">Cost snapshot {{id}}</h1>
+</div>
+
+<div class="container">
+    <div class="html ui top attached segment">
+        <table class="ui celled striped table">
+            <thead>
+                <tr>
+                    <th>snapshot id</th>
+                    <th>record type</th>
+                    <th>record id</th>
+                    <th>billing period start date</th>
+                    <th>billing period end date</th>
+                    <th>invoice date</th>
+                    <th>product code</th>
+                    <th>product name</th>
+                    <th>usage type</th>
+                    <th>operation</th>
+                    <th>rate id</th>
+                    <th>item description</th>
+                    <th>usage start date</th>
+                    <th>usage end date</th>
+                    <th>usage quantity</th>
+                    <th>blended rate</th>
+                    <th>cost before tax</th>
+                    <th>credits</th>
+                    <th>total cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <td class="messages">
+                    {% for row in snapshot-rows %}
+                    <tr>
+                        <td>{{row.snapshot_id}}</td>
+                        <td>{{row.record_type}}</td>
+                        <td>{{row.record_id}}</td>
+                        <td>{{row.billing_period_start_date}}</td>
+                        <td>{{row.billing_period_end_date}}</td>
+                        <td>{{row.invoice_date}}</td>
+                        <td>{{row.product_code}}</td>
+                        <td>{{row.product_name}}</td>
+                        <td>{{row.usage_type}}</td>
+                        <td>{{row.operation}}</td>
+                        <td>{{row.rate_id}}</td>
+                        <td>{{row.item_description}}</td>
+                        <td>{{row.usage_start_date}}</td>
+                        <td>{{row.usage_end_date}}</td>
+                        <td>{{row.usage_quantity}}</td>
+                        <td>{{row.blended_rate}}</td>
+                        <td>{{row.cost_before_tax}}</td>
+                        <td>{{row.credits}}</td>
+                        <td>{{row.total_cost}}</td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

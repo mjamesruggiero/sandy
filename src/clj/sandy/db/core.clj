@@ -4,7 +4,8 @@
     [clojure.java.jdbc :as jdbc]
     [conman.core :as conman]
     [config.core :refer [env]]
-    [mount.core :refer [defstate]])
+    [mount.core :refer [defstate]]
+    [clj-time.format :as format])
   (:import org.postgresql.util.PGobject
            org.postgresql.jdbc4.Jdbc4Array
            clojure.lang.IPersistentMap
@@ -89,6 +90,35 @@
   IPersistentVector
   (sql-value [value] (to-pg-json value)))
 
+;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+;; date formatters
+;; TODO move these to utils namespace
+;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(def- aws-formatter
+  (format/formatter "yyyy/MM/dd HH:mm:ss"))
+
+(defn- aws-date-to-date
+  "convert standard date string to timestamp"
+  [date-string]
+  (format/parse aws-formatter date-string))
+
+(defn- date-to-timestamp
+  [dt]
+  (java.sql.Timestamp. (.getMillis dt)))
+
+(defn date-converter
+  "Syntactic sugar for string-to-to timestamp conversion"
+  [datestring]
+  (try
+    (->> datestring
+         aws-date-to-date
+         date-to-timestamp)
+    (catch java.lang.IllegalArgumentException _
+      (date-to-timestamp (aws-date-to-date "1970/01/01 00:00:00")))
+    (finally (str "Release some resource"))))
+
+;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ;; (defn f
 ;;   []
 ;;   (create-instance-snapshot!
@@ -99,6 +129,30 @@
 ;;     :name "asap staging autoscale"
 ;;     :stages "staging"
 ;;     :availability_zone "us-west-2a"}))
+
+;; (defn f []
+;;   (create-cost-snapshot!
+;;    {
+;;     :snapshot_id 1
+;;     :record_type "fake-record-type"
+;;     :record_id 1
+;;     :billing_period_start_date (date-converter "2017/04/01 00:00:00")
+;;     :billing_period_end_date (date-converter "2017/04/01 00:00:00")
+;;     :invoice_date (date-converter "2017/04/01 00:00:00")
+;;     :product_code "fake-product-code"
+;;     :product_name "fake-product-name"
+;;     :usage_type "fake-usage-type"
+;;     :operation "fake-operation"
+;;     :rate_id "fake-rate"
+;;     :item_description "fake-item-description"
+;;     :usage_start_date (date-converter "2017/04/01 00:00:00")
+;;     :usage_end_date (date-converter "2017/04/01 00:00:00")
+;;     :usage_quantity 1.2
+;;     :blended_rate 1.2
+;;     :cost_before_tax 1.2
+;;     :credits 1.2
+;;     :total_cost 1.2
+;;     }))
 
 ;; (try
 ;;   (f)

@@ -42,8 +42,7 @@ usage_quantity,
 blended_rate,
 cost_before_tax,
 credits,
-total_cost,
-created_at
+total_cost
 )
 VALUES
 (
@@ -65,8 +64,7 @@ VALUES
 :blended_rate,
 :cost_before_tax,
 :credits,
-:total_cost,
-:created_at
+:total_cost
 )
 
 -- name: create-instance-snapshot!
@@ -92,9 +90,17 @@ VALUES
 )
 
 -- name: find-instance-snapshot
--- finds a single snapshot
+-- finds a single instance snapshot
 SELECT instance_snapshots.*
 FROM instance_snapshots
+WHERE id = :id
+ORDER by id DESC
+LIMIT 1
+
+-- name: find-cost-snapshot
+-- finds a single cost snapshot
+SELECT cost_snapshots.*
+FROM cost_snapshots
 WHERE id = :id
 ORDER by id DESC
 LIMIT 1
