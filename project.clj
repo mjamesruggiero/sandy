@@ -28,7 +28,10 @@
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  [luminus-immutant "0.1.0"]
                  [luminus-log4j "0.1.2"]
-                 [clj-time "0.13.0"]]
+                 [clj-time "0.13.0"]
+                 [org.clojure/data.csv "0.1.2"]
+                 [camel-snake-kebab "0.4.0"]
+                 [amazonica "0.3.93"]]
 
   :min-lein-version "2.0.0"
   :uberjar-name "sandy.jar"

@@ -94,7 +94,7 @@
 ;; date formatters
 ;; TODO move these to utils namespace
 ;; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-(def- aws-formatter
+(def aws-formatter
   (format/formatter "yyyy/MM/dd HH:mm:ss"))
 
 (defn- aws-date-to-date
