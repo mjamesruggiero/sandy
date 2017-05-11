@@ -97,51 +97,6 @@
     (map #(map-values % cols-to-convert str->float) filtered)))
 
 ;;~~~~~~~~~~~~~~~~~~
-;;  EC2 metadata
-;;~~~~~~~~~~~~~~~~~~
-
-(defn tag-desired?
-  "Does tag map contain the :key value we want?"
-  [m]
-  (contains? #{"Stages" "Name" "Project"} (:key m)))
-
-(defn tag->vec
-  "Convert {:key <foo> :value <bar>} map to k->v vector"
-  [t]
-  (let [new-k (keyword (clojure.string/lower-case (:key t)))]
-    [new-k (:value t)]))
-
-(defn transform-tags
-  "Turn tag structure into columns"
-  [tags]
-  (let [defaults {:stages "n/a" :name "n/a" :project "n/a"}
-        filtered (filter tag-desired? tags)
-        raw (into {} (map tag->vec filtered))]
-    ;; merge defaults with potential tags found
-    ;; (some will be missing)
-    (merge-with #(or %1 %2) raw defaults)))
-
-(defn flatten-instance
-  "Turn slightly nested EC2 data into flattened map"
-  [i]
-  (let [initial    (into {} (select-keys i [:instance-type :instance-id]))
-        zone       (get-in i [:placement :availability-zone])
-        tags       (transform-tags (:tags i))]
-    (assoc (into initial tags) :availability-zone zone)))
-
-(defn instances
-  "Grab all instances"
-  []
-  (let [endpoints (for [region (:regions (a/describe-regions))]
-                    (:endpoint region))
-        reservations (flatten
-                      (for [endpoint endpoints]
-                        (:reservations
-                         (a/describe-instances {:endpoint endpoint}))))]
-    (flatten (for [reservation reservations]
-               (:instances reservation)))))
-
-;;~~~~~~~~~~~~~~~~~~
 ;;  AWS cost data
 ;;~~~~~~~~~~~~~~~~~~
 
@@ -241,66 +196,16 @@
   [costs]
   (sum-by-key costs :product-name :total-cost))
 
-(defn csv-builder
-  [& {:keys [config-file]
-      :or {config-file (io/resource "dev-config.edn")}}]
-  (let [
-        ;; the files
-        config (load-config config-file)
-        csv-path (:aws-csv config)
-
-        instance-columns [:instance-type
-                          :instance-id
-                          :project
-                          :name
-                          :stages
-                          :availability-zone]
-        ;; the instances
-        flattened (map #(flatten-instance %) (instances))]
-    (maps->csv csv-path flattened instance-columns)))
-
-
-;;~~~~~~~~~~~~~~~~~~~
-;; helper fns for DB prep
-;;~~~~~~~~~~~~~~~~~~~
-
 (defn- random-uuid []
   (str (java.util.UUID/randomUUID)))
 
-(defn- instances-with-canonical-keys
-  [flattened]
-  (let [instance-columns [:instance-type
-                          :instance-id
-                          :project
-                          :name
-                          :stages
-                          :availability-zone]]
-        (map #(select-keys % instance-columns) flattened)))
-
-(defn- decorate-with-snapshot-id
+(defn decorate-with-snapshot-id
   [guid rows]
   (map #(assoc % :snapshot_id guid) rows))
 
-(defn- rows->snake-cased
+(defn rows->snake-cased
   [rows]
   (map #(transform-keys ->snake_case %) rows))
-
-(defn- flatten-instances
-  [instances]
-  (map #(flatten-instance %) instances))
-
-(defn- usage-date-populated
-  [row]
-  (let [usage (:usage_start_date row)]
-    (not= usage "")))
-
-(defn instances->database-rows
-  [instances snapshot-id]
-  (let [flattened (-> instances
-                      (flatten-instances)
-                      (instances-with-canonical-keys)
-                      (rows->snake-cased))]
-    (decorate-with-snapshot-id snapshot-id flattened)))
 
 (defn costs->database-rows
   [cost-rows snapshot-id]
