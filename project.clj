@@ -4,10 +4,12 @@
   :url "http://example.com/FIXME"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [selmer "1.0.0"]
+                 [com.fasterxml.jackson.core/jackson-core "2.6.4"]
+                 [amazonica "0.3.93"]
+                 [selmer "1.10.7"]
                  [markdown-clj "0.9.85"]
                  [luminus/config "0.5"]
-                 [ring-middleware-format "0.7.0"]
+                 [ring-middleware-format "0.7.2"]
                  [metosin/ring-http-response "0.6.5"]
                  [bouncer "1.0.0"]
                  [org.webjars/bootstrap "4.0.0-alpha.2"]
@@ -17,7 +19,8 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [com.taoensso/tower "3.0.2"]
                  [compojure "1.4.0"]
-                 [ring-webjars "0.1.1"]
+                 [ring-webjars "0.2.0"
+                  :exclusions [com.fasterxml.jackson.core/jackson-databind]]
                  [ring/ring-defaults "0.1.5"]
                  [ring "1.4.0" :exclusions [ring/ring-jetty-adapter]]
                  [mount "0.1.8"]
@@ -30,8 +33,7 @@
                  [luminus-log4j "0.1.2"]
                  [clj-time "0.13.0"]
                  [org.clojure/data.csv "0.1.2"]
-                 [camel-snake-kebab "0.4.0"]
-                 [amazonica "0.3.93"]]
+                 [camel-snake-kebab "0.4.0"]]
 
   :min-lein-version "2.0.0"
   :uberjar-name "sandy.jar"
