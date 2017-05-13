@@ -1,47 +1,106 @@
 (ns sandy.test.utils
-  (:require [sandy.utils :as sut]
+  (:require [sandy.utils :refer :all]
             [clojure.test :refer :all]))
 
-(deftest can-grep-ec2-instance-type-from-aws-line-item
-  (testing "given an EC2 line item, can I grep the instance type?"
-    (is (= "r3.4xlarge" (sut/get-ec2-instance-name "HeavyUsage:r3.4xlarge")))))
+(def sample-row
+  {:usage-quantity     "13997.0"
+   :payer-account-name "Content Quality Services"
+   :total-cost         "349.930000"
+   :item-description   "$0.025 per LoadBalancer-hour (or partial hour)"
+   :invoice-date       "2017/03/03 04:43:38"})
 
-(def rows [{:instance-type     "c3.2xlarge"
-            :instance-id       "i-0ad33c31bb4615311"
-            :stages            "production-eu-central-1"
-            :project           "adserver"
-            :name              "adserver production blue autoscale"
-            :availability-zone "eu-central-1a"
-            :cost              0.0
-            :daily-cost        0.0}
-           {:instance-type     "c3.2xlarge"
-            :instance-id       "i-0ad33c31bb4615311"
-            :stages            "production-eu-central-1"
-            :project           "adserver"
-            :name              "adserver production blue autoscale"
-            :availability-zone "eu-central-1a"
-            :cost              0.0
-            :daily-cost        0.0}])
+(deftest map-values-converts-selected-values
+  (testing "Can map values for specific keys to f"
+    (let [f (fn [v] (Float/parseFloat v))
+          result (map-values sample-row [:usage-quantity :total-cost] f)]
+      (is (= 13997.0 (:usage-quantity result))))))
 
-(deftest can-decorate-ec2-instance
-  (testing "Given a colon-concat usage-type label, can decorate with instance type"
-    (is (= {:usage-type "BoxUsage:m3.medium" :type "m3.medium"}
-        (sut/decorate-row-with-instance-name {:usage-type  "BoxUsage:m3.medium"})))))
+(def ^{:const true}
+  filterable-rows
+  [
+   {
+    :usage-quantity            100
+    :payer-account-name        "fake account"
+    :total-cost                100
+    :item-description          "fake description"
+    :operation                 "fake operation"
+    :product-name              "EC2"
+    :credits                   100
+    :payer-account-id          100
+    :billing-period-start-date "fake date"
+    :usage-type                "fake usage type"
+    :product-code              "AmazonDynamoDB"
+    :rate-id                   12345
+    :billing-period-end-date   "fake date"
+    :cost-before-tax           100
+    :record-type               "fake record type"
+    }
+   {
+    :usage-quantity            100
+    :payer-account-name        "fake account"
+    :total-cost                100
+    :item-description          "fake description"
+    :operation                 "fake operation"
+    :product-name              "EC2"
+    :credits                   100
+    :payer-account-id          100
+    :billing-period-start-date "fake date"
+    :usage-type                "fake usage type"
+    :product-code              "AmazonEC2"
+    :rate-id                   56789
+    :billing-period-end-date   "fake date"
+    :cost-before-tax           100
+    :record-type               "TypeIHate"
+    }
+   ]
+  )
 
-(deftest can-decorate-cost-with-cost-per-hour
-  (testing "given a row, can decorate map with new key value"
-    (is (= {:cost-before-tax 8
-            :usage-quantity  2
-            :cost-per-hour   4}
-           (sut/decorate-row-with-cost-per-hour {:cost-before-tax 8
-                                                 :usage-quantity  2})))))
+(deftest can-filter-desired-records
+  (testing "given a list of AWS cost records, just return the EC2s"
+    (is (= 56789
+           (:rate-id
+            (first
+             (filter-maps filterable-rows :product-code "AmazonEC2" :eq)))))))
 
-(def ^{:const true} ec2-cost-csv-output
-  [{:type "c3.2xlarge" :usage-quantity 10 :cost-before-tax 100 :cost-per-hour 10 :product-code "AmazonEC2" :foo "bar"}
-   {:type "c3.2xlarge" :usage-quantity 10 :cost-before-tax 200 :cost-per-hour 20 :product-code "AmazonEC2" :foo "bar"}
-   {:type "t1.micro" :usage-quantity 10 :cost-before-tax 50 :cost-per-hour 5 :product-code "AmazonEC2" :foo "bar"}
-   {:type "SomethingSomething" :usage-quantity 1 :cost-before-tax 1 :cost-per-hour 1 :product-code "AmazonDynamo" :foo "bar"}])
+(deftest can-filter-undesired-records
+  (testing "given list of AWS cost records, return ones that aren't dynamo"
+    (is (= 12345
+           (:rate-id
+            (first
+             (filter-maps filterable-rows :product-code "AmazonEC2" :not=)))))))
 
-(deftest ec2-instance-costs-can-map-instance-to-averag-cost
-  (testing "Given CSV cost data, we can extract a map of instance name to cost"
-    (is (= {"c3.2xlarge" 15 "t1.micro" 5} (sut/ec2-instance-costs ec2-cost-csv-output)))))
+(deftest can-convert-strings-to-floats
+  (testing "given a string number, can convert to float representation"
+    (is (= (float 9.73) (str->float "9.73")))))
+
+(deftest can-return-sensible-default-for-failed-conversion
+  (testing "given a string number, can convert to float representation"
+    (is (= (float 0) (str->float "")))))
+
+(def ^{:const true} monkey-rows
+  [{:monkey "Capuchin" :cost 100}
+   {:monkey "Howler"   :cost 100}
+   {:monkey "Howler"   :cost 200}
+   {:monkey "Mandrill" :cost 100}
+   {:monkey "Capuchin" :cost 100}])
+
+(deftest sum-by-key-sums-rows-with-matching-keyvals
+  (testing "given a seq of maps, reduce for a given key (i.e. group and sum)"
+    (is (= {"Capuchin" 200 "Howler" 300 "Mandrill" 100}
+           (sum-by-key monkey-rows :monkey :cost)))))
+
+(deftest filtered-columns-shrinks-seq-of-maps
+  (testing "foo"
+    (let [ms           [{:foo 1, :bar 2, :baz 3}
+                        {:foo 4, :bar 5, :baz 6}
+                        {:foo 7, :bar 8, :baz 9}]
+          expected [{:baz 3}
+                    {:baz 6}
+                    {:baz 9}]]
+          (is (= expected (filter-columns ms [:baz]))))))
+
+(deftest safe-divide-handles-zero-divisor
+  (testing "Given a divide by zero, returns zero"
+    (is (= 0.0 (safe-divide 0 0)))
+    (is (= Double/NEGATIVE_INFINITY (safe-divide -100 0)))
+    (is (= Double/POSITIVE_INFINITY (safe-divide 100 0)))))
