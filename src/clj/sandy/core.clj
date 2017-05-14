@@ -3,7 +3,9 @@
             [luminus.repl-server :as repl]
             [luminus.http-server :as http]
             [sandy.db.migrations :as migrations]
-            [config.core :refer [env]])
+            [config.core :refer [env]]
+            [sandy.aws.ec2 :as ec2]
+            [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
 (defn parse-port [port]
@@ -34,10 +36,26 @@
                  :init    init
                  :port    port})))
 
+(defn placeholder []
+  (println "this is your placeholder"))
+
+(def cli-options
+  [["-c" "--config CONFIG-FILE" "EDN file with config key-value settings"]
+   ["-f" "--function FUNCTION" "Choices are: instances, costs"]
+   ["-p" "--port PORT" "server port"]
+   ["-h" "--help"]])
+
+(defn runner
+  "takes args and decides which fn to run"
+  [args]
+  (let [opts (:options args)
+        config (:config opts)
+        operation (:function opts)
+        port (:port opts)]
+    (case operation
+      "instances" (placeholder)
+      (start-app [port]))))
+
 (defn -main [& args]
-  (cond
-    (some #{"migrate" "rollback"} args)
-    (do (migrations/migrate args) (System/exit 0))
-    :else
-    (start-app args)))
-  
+  (let [opts (parse-opts args cli-options)]
+    (runner opts)))
