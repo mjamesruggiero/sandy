@@ -60,11 +60,6 @@
   [instances]
   (map #(flatten-instance %) instances))
 
-(defn- usage-date-populated
-  [row]
-  (let [usage (:usage_start_date row)]
-    (not= usage "")))
-
 (defn instances->database-rows
   [instances snapshot-id]
   (let [flattened (-> instances
