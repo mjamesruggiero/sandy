@@ -50,19 +50,32 @@
   "Given bucket metadata, return size
   of all assets inside the bucket"
   [bucket]
-  (let [ms (second (second bucket))]
-    (reduce + 0 (map :size ms))))
+  (let [ms (:object-summaries bucket)
+        sizefn (fn [m] (get m :size 0))
+        sizes (map sizefn ms)]
+    (reduce + 0 sizes)))
 
-(defn- decorate-with-size
+(defn age-of-newest-object
+  "Given a bucket, get the age of the newest object"
+  [bucket]
+  (let [dates (map :last-modified (:object-summaries bucket))]
+    (if (not (empty? dates))
+      (last (sort dates)))))
+
+(defn- decorate-with-size-and-age
   "Side-effecting"
   [m]
   (let [bucket-metadata (s3/list-objects :bucket-name (:name m))]
-    (assoc m :size (size bucket-metadata))))
+    (assoc m
+           :size (size bucket-metadata)
+           :most-recently-updated (age-of-newest-object bucket-metadata))))
 
 (defn- save-buckets-without-policies
-  "Side-effecting"
+  "Pulls buckets without policies,
+  saves size and age of most recent object to CSV;
+  side-effecting"
   [filepath]
   (let [all-buckets (fetch-buckets)
         without-policies (second (split-with-lifecycle all-buckets))
-        s (map decorate-with-size without-policies)]
-    (utils/maps->csv filepath s [:name :size])))
+        s (map decorate-with-size-and-age without-policies)]
+    (utils/maps->csv filepath s [:name :size :most-recently-updated])))
