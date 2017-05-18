@@ -28,10 +28,7 @@
 
 (defn with-lifecycle-rules
   [buckets]
-  (filter
-   (fn [m]
-     (has-lifecycle? m))
-   buckets))
+  (filter has-lifecycle? buckets))
 
 (defn split-with-lifecycle
   "Given a seq of bucket maps,
@@ -59,7 +56,7 @@
   "Given a bucket, get the age of the newest object"
   [bucket]
   (let [dates (map :last-modified (:object-summaries bucket))]
-    (if (not (empty? dates))
+    (if (seq? dates)
       (last (sort dates)))))
 
 (defn- decorate-with-size-and-age
