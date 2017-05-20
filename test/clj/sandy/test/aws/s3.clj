@@ -64,3 +64,31 @@
            :noncurrent-version-expiration-in-days -1}
           expected {:storage-class "STANDARD_IA" :days 90}]
       (is (= expected (sut/flatten-rule fake-rule))))))
+
+(def test-ia-row
+  {:operation "StandardIAStorage"
+   :usage-type "USW2-TimedStorage-SIA-ByteHrs"
+   :resource "fake-bucket"
+   :usage-value "3968822424"})
+
+(deftest is-ia-returns-true-for-infrequent-access-resource
+  (testing "given a map representing an S3 IA resource, return true"
+    (is (= true (sut/is-ia? test-ia-row)))))
+
+(def test-standard-row
+  {:operation "StandardStorage"
+   :usage-type "USW2-TimedStorage-SIA-ByteHrs"
+   :resource "fake-bucket"
+   :usage-value "3968822424"})
+
+(deftest is-ia-returns-false-for-infrequent-access-resource
+  (testing "given a map representing a non-IA S3 resource, return false"
+    (is (= false (sut/is-ia? test-standard-row)))))
+
+(deftest is-standard-returns-true-for-standard-resource
+  (testing "given a map representing a non-IA S3 resource, return true"
+    (is (= true (sut/is-standard? test-standard-row)))))
+
+(deftest is-standard-returns-false-for-ia-resource
+  (testing "given a map representing IA S3 resource, return false"
+    (is (= false (sut/is-standard? test-ia-row)))))

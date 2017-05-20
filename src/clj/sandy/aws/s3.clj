@@ -1,6 +1,7 @@
 (ns sandy.aws.s3
   (:require [amazonica.aws.s3 :as s3]
-            [sandy.utils :as utils])
+            [sandy.utils :as utils]
+            [camel-snake-kebab.core :refer :all])
   (:import com.amazonaws.services.s3.model.AmazonS3Exception))
 
 (defn- fetch-lifecycle
@@ -76,3 +77,23 @@
         without-policies (second (split-with-lifecycle all-buckets))
         s (map decorate-with-size-and-age without-policies)]
     (utils/maps->csv filepath s [:name :size :most-recently-updated])))
+
+(defn parse-costs-csv
+  [filepath]
+  (let [csv (utils/get-csv filepath)
+        ms (utils/csv-to-maps csv ->kebab-case-keyword)
+        cols [:operation :usage-type :resource :usage-value ]
+        pruned (utils/filter-columns ms cols)]
+    pruned))
+
+(defn is-ia?
+  [m]
+  (and
+   (re-find #"TimedStorage" (:usage-type m))
+   (= "StandardIAStorage" (:operation m))))
+
+(defn is-standard?
+  [m]
+  (and
+   (re-find #"TimedStorage" (:usage-type m))
+   (= "StandardStorage" (:operation m))))
