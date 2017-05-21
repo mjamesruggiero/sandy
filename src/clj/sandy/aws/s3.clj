@@ -87,13 +87,33 @@
     pruned))
 
 (defn is-ia?
+  "Is the record an infrequent access storage cost?"
   [m]
   (and
    (re-find #"TimedStorage" (:usage-type m))
    (= "StandardIAStorage" (:operation m))))
 
 (defn is-standard?
+  "Is the record a standard storage cost?"
   [m]
   (and
    (re-find #"TimedStorage" (:usage-type m))
    (= "StandardStorage" (:operation m))))
+
+(defn merge-maps
+  "Sum pairwise tuples being pointed
+  to by shared keys"
+  [ms]
+  (apply merge-with (fn [a b]
+                      [(+ (first a) (first b)) (+ (second a) (second b))]) ms))
+(defn costs->maps
+  [records]
+  (map (fn [m]
+         (cond
+           (is-standard? m) {(:resource m) [(Long/parseLong (:usage-value m)) 0]}
+           (is-ia? m) {(:resource m) [0 (Long/parseLong (:usage-value  m))]}))
+       records))
+
+(defn summarize-costs
+  [records]
+  (merge-maps (costs->maps records)))

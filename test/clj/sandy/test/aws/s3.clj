@@ -92,3 +92,30 @@
 (deftest is-standard-returns-false-for-ia-resource
   (testing "given a map representing IA S3 resource, return false"
     (is (= false (sut/is-standard? test-ia-row)))))
+
+(def test-rows
+  '({:operation "StandardIAStorage", :usage-type "USW2-TimedStorage-SIA-ByteHrs", :resource "fantastic-staging", :usage-value "3968822424"}
+    {:operation "StandardIAStorage", :usage-type "USW2-TimedStorage-SIA-ByteHrs", :resource "fox-staging", :usage-value "91726"}
+    {:operation "StandardStorage", :usage-type "USW2-TimedStorage-ByteHrs", :resource "ooze-staging", :usage-value "1000"}
+    {:operation "StandardIAStorage", :usage-type "USW2-TimedStorage-ByteHrs", :resource "ooze-staging", :usage-value "2000"}
+    {:operation "StandardStorage", :usage-type "USW2-TimedStorage-ByteHrs", :resource "fantastic-staging", :usage-value "45667755864"}
+    {:operation "StandardStorage", :usage-type "USW2-TimedStorage-ByteHrs", :resource "fantastic-staging", :usage-value "45667755864"}))
+
+(deftest test-costs->maps-returns-useful-values
+  (testing "given maps of S3 costs, get maps of bucket->[standard IA] values"
+    (is (=
+         '({"fantastic-staging" [0 3968822424]}
+           {"fox-staging" [0 91726]}
+           {"ooze-staging" [1000 0]}
+           {"ooze-staging" [0 2000]}
+           {"fantastic-staging" [45667755864 0]}
+           {"fantastic-staging" [45667755864 0]})
+         (sut/costs->maps test-rows)))))
+
+(deftest test-summarize-costs-returns-useful-values
+  (testing "given maps of S3 costs, get summed values for buckets"
+    (is (=
+         '{"fantastic-staging" [91335511728 3968822424]
+            "fox-staging"       [0 91726]
+            "ooze-staging"      [1000 2000]}
+         (sut/summarize-costs test-rows)))))
