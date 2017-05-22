@@ -82,22 +82,26 @@
   [filepath]
   (let [csv (utils/get-csv filepath)
         ms (utils/csv-to-maps csv ->kebab-case-keyword)
-        cols [:operation :usage-type :resource :usage-value ]
+        cols [:operation :usage-type :resource :usage-value]
         pruned (utils/filter-columns ms cols)]
     pruned))
+
+(defn- is-storage?
+  [m]
+  (re-find #"TimedStorage" (:usage-type m)))
 
 (defn is-ia?
   "Is the record an infrequent access storage cost?"
   [m]
   (and
-   (re-find #"TimedStorage" (:usage-type m))
+   (is-storage? m)
    (= "StandardIAStorage" (:operation m))))
 
 (defn is-standard?
   "Is the record a standard storage cost?"
   [m]
   (and
-   (re-find #"TimedStorage" (:usage-type m))
+   (is-storage? m)
    (= "StandardStorage" (:operation m))))
 
 (defn merge-maps
