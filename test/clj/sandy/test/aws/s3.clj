@@ -73,7 +73,7 @@
 
 (deftest is-ia-returns-true-for-infrequent-access-resource
   (testing "given a map representing an S3 IA resource, return true"
-    (is (= true (sut/is-ia? test-ia-row)))))
+    (is (true? (sut/is-ia? test-ia-row)))))
 
 (def test-standard-row
   {:operation "StandardStorage"
@@ -83,15 +83,15 @@
 
 (deftest is-ia-returns-false-for-infrequent-access-resource
   (testing "given a map representing a non-IA S3 resource, return false"
-    (is (= false (sut/is-ia? test-standard-row)))))
+    (is (false? (sut/is-ia? test-standard-row)))))
 
 (deftest is-standard-returns-true-for-standard-resource
   (testing "given a map representing a non-IA S3 resource, return true"
-    (is (= true (sut/is-standard? test-standard-row)))))
+    (is (true? (sut/is-standard? test-standard-row)))))
 
 (deftest is-standard-returns-false-for-ia-resource
   (testing "given a map representing IA S3 resource, return false"
-    (is (= false (sut/is-standard? test-ia-row)))))
+    (is (false? (sut/is-standard? test-ia-row)))))
 
 (def test-rows
   '({:operation "StandardIAStorage", :usage-type "USW2-TimedStorage-SIA-ByteHrs", :resource "fantastic-staging", :usage-value "3968822424"}

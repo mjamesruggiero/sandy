@@ -58,7 +58,7 @@
 
 (defn- flatten-instances
   [instances]
-  (map #(flatten-instance %) instances))
+  (map flatten-instance instances))
 
 (defn instances->database-rows
   [instances snapshot-id]
