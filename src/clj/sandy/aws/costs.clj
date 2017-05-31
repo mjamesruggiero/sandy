@@ -97,9 +97,6 @@
   [costs]
   (utils/sum-by-key costs :product-name :total-cost))
 
-(defn- random-uuid []
-  (str (java.util.UUID/randomUUID)))
-
 (defn costs->database-rows
   [cost-rows snapshot-id]
   (let [filtered

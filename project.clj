@@ -26,7 +26,7 @@
                  [mount "0.1.8"]
                  [luminus-nrepl "0.1.2"]
                  [migratus "0.8.9"]
-                 [conman "0.3.0"]
+                 [conman "0.6.6"]
                  [org.postgresql/postgresql "9.4-1206-jdbc4"]
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  [luminus-immutant "0.1.0"]

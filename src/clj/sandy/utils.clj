@@ -98,3 +98,5 @@
   [guid rows]
   (map #(assoc % :snapshot_id guid) rows))
 
+(defn random-uuid []
+  (str (java.util.UUID/randomUUID)))

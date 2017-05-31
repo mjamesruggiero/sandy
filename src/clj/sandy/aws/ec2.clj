@@ -3,7 +3,9 @@
             [amazonica.aws.ec2 :as a]
             [sandy.utils :as utils]
             [camel-snake-kebab.core :refer :all]
-            [camel-snake-kebab.extras :refer [transform-keys]]))
+            [camel-snake-kebab.extras :refer [transform-keys]]
+            [sandy.db.core :as sandy-db]
+            [sandy.utils :as utils]))
 
 (defn tag-desired?
   "Does tag map contain the :key value we want?"
@@ -67,3 +69,14 @@
                       (instances-with-canonical-keys)
                       (utils/rows->snake-cased))]
     (utils/decorate-with-snapshot-id snapshot-id flattened)))
+
+(defn mk-instance-snapshot
+  []
+  (let [records (instances)
+        snapshot {:table_name "instances"
+                  :snapshot_id (utils/random-uuid)
+                  :title "instance snapshot"}
+        snapshot-rec (first (sandy-db/create-snapshot snapshot))
+        transformed (instances->database-rows records (:id snapshot-rec))
+        res (map #(sandy-db/create-instance-snapshot %) transformed)]
+    res))

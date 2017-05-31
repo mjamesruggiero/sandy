@@ -1,27 +1,27 @@
--- name: create-user!
--- creates a new user record
+-- :name create-user! :! :n
+-- :doc creates a new user record
 INSERT INTO users
 (id, first_name, last_name, email, pass)
 VALUES (:id, :first_name, :last_name, :email, :pass)
 
--- name: update-user!
--- update an existing user record
+-- :name update-user! :! :n
+-- :doc update an existing user record
 UPDATE users
 SET first_name = :first_name, last_name = :last_name, email = :email
 WHERE id = :id
 
--- name: get-user
--- retrieve a user given the id.
+-- :name get-user :? :1
+-- :doc retrieve a user given the id.
 SELECT * FROM users
 WHERE id = :id
 
--- name: delete-user!
--- delete a user given the id
+-- :name delete-user! :! :n
+-- :doc delete a user given the id
 DELETE FROM users
 WHERE id = :id
 
--- name: create-cost-snapshot!
--- creates a new cost snapshot record
+-- :name create-cost-snapshot! :! :n
+-- :doc creates a new cost snapshot record
 INSERT INTO cost_snapshots
 (
 snapshot_id,
@@ -67,8 +67,8 @@ VALUES
 :total_cost
 )
 
--- name: create-instance-snapshot!
--- creates a new instance snapshot record
+-- :name create-instance-snapshot :! :n
+-- :doc creates a new instance snapshot record
 INSERT INTO instance_snapshots (
 snapshot_id,
 instance_type,
@@ -89,31 +89,44 @@ VALUES
 :availability_zone
 )
 
--- name: find-instance-snapshot
--- finds a single instance snapshot
+-- :name find-instance-snapshot :? :1
+-- :doc finds a single instance snapshot
 SELECT instance_snapshots.*
 FROM instance_snapshots
 WHERE id = :id
 ORDER by id DESC
 LIMIT 1
 
--- name: find-cost-snapshot
--- finds a single cost snapshot
+-- :name find-cost-snapshot :? :1
+-- :doc finds a single cost snapshot
 SELECT cost_snapshots.*
 FROM cost_snapshots
 WHERE id = :id
 ORDER by id DESC
 LIMIT 1
 
--- name: create-snapshot!
--- creates a new snapshot record
+-- :name create-snapshot :n
+-- :doc creates a new snapshot record with a returning clause
 INSERT INTO snapshots (table_name, snapshot_id, title)
-VALUES (:table_name, :snapshot_id, :title) 
+VALUES (:table_name, :snapshot_id, :title) returning id
 
--- name: find-snapshot
--- creates a new cost snapshot record
+-- :name find-snapshot :? :n
+-- :doc creates a new cost snapshot record
 SELECT snapshots.*
 FROM snapshots.*
 WHERE id = :id
 ORDER by id DESC
 LIMIT 1
+
+-- :name create-instance-snapshots :! :n
+-- Insert multiple characters with :tuple* parameter type
+INSERT INTO instance_snapshots (
+snapshot_id,
+instance_type,
+instance_id,
+project,
+name,
+stages,
+availability_zone
+)
+VALUES :tuple*:instance_snapshots
