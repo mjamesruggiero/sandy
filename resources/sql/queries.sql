@@ -130,3 +130,17 @@ stages,
 availability_zone
 )
 VALUES :tuple*:instance_snapshots
+
+-- :name most-recent-instance-snapshot :? :1
+-- :doc finds the last instance snapshot
+SELECT COUNT(*) as count, project
+FROM instance_snapshots
+WHERE snapshot_id =
+(
+SELECT id
+FROM snapshots
+WHERE table_name = 'instance_snapshots'
+ORDER by created_at DESC limit 1
+)
+GROUP BY project
+ORDER by project ASC;

@@ -7,5 +7,11 @@
         <input type="file" name="file" id="file" />
         <input type="submit" value="upload">
     </form>
+
+    <h1 class="ui header">Download instance snapshot</h1>
+    <form action="/generate" enctype="multipart/form-data" method="POST">
+        {% csrf-field %}
+        <input type="submit" value="download">
+    </form>
 </div>
 {% endblock %}

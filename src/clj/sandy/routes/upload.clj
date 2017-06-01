@@ -1,7 +1,10 @@
 (ns sandy.routes.upload
   (:require [compojure.core :refer [defroutes GET POST]]
             [ring.util.response :refer [file-response redirect]]
-            [sandy.layout :as layout])
+            [sandy.layout :as layout]
+            [sandy.aws.ec2 :as ec2]
+            [sandy.aws.costs :as costs]
+            [clojure.tools.logging :as log])
   (:import [java.io File FileInputStream FileOutputStream]))
 
 (def resource-path "/tmp/")
@@ -24,11 +27,24 @@
         (.transferFrom dest source 0 (.size source))
         (.flush out)))))
 
+(defn generate-instance-snapshot
+  []
+  (ec2/mk-instance-snapshot->future))
+
+(defn handle-csv
+  [filepath]
+  (future (costs/csv->database-rows filepath)))
+
 (defroutes upload-routes
   (GET "/upload" []
     (layout/render "upload.html"))
   (POST "/upload" [file]
     (upload-file resource-path file)
-    (redirect (str "/files/" (:filename file))))
+    (log/debug (str "the file is " (str resource-path (:filename file))))
+    (handle-csv (str resource-path (:filename file)))
+    (redirect "/"))
+  (POST "/generate" []
+    (generate-instance-snapshot)
+    (redirect "/"))
   (GET "/files/:filename" [filename]
     (file-response (str resource-path filename))))

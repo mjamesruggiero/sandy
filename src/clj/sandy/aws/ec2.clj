@@ -5,7 +5,8 @@
             [camel-snake-kebab.core :refer :all]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [sandy.db.core :as sandy-db]
-            [sandy.utils :as utils]))
+            [sandy.utils :as utils]
+            [clojure.tools.logging :as log]))
 
 (defn tag-desired?
   "Does tag map contain the :key value we want?"
@@ -70,13 +71,27 @@
                       (utils/rows->snake-cased))]
     (utils/decorate-with-snapshot-id snapshot-id flattened)))
 
+(defn- mk-snapshot-rec
+  []
+  (let [snapshot {:table_name  "instance_snapshots"
+                  :snapshot_id (utils/random-uuid)
+                  :title       "instance snapshots"}]
+    (first (sandy-db/create-snapshot snapshot))))
+
 (defn mk-instance-snapshot
+  "Grab all the instances and generate
+  rows (the essence of a snapshot)"
   []
   (let [records (instances)
-        snapshot {:table_name "instances"
-                  :snapshot_id (utils/random-uuid)
-                  :title "instance snapshot"}
-        snapshot-rec (first (sandy-db/create-snapshot snapshot))
+        snapshot-rec (mk-snapshot-rec)
+        _ (log/debug (str "created a snapshot: " (first snapshot-rec)))
         transformed (instances->database-rows records (:id snapshot-rec))
-        res (map #(sandy-db/create-instance-snapshot %) transformed)]
+        _ (log/debug (str "number of transformed records: " (count transformed)))
+        res (map #(sandy-db/create-instance-snapshot %) transformed)
+        _ (log/debug (str "inserted records: " (count res)))]
     res))
+
+(defn mk-instance-snapshot->future
+  "Wrap #mk-instance-snapshot in a future"
+  []
+  (future (mk-instance-snapshot)))

@@ -3,14 +3,36 @@
             [clojure.java.io :as io]
             [camel-snake-kebab.core :refer :all]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [sandy.utils :as utils]))
+            [sandy.utils :as utils]
+            [sandy.db.core :as sandy-db]
+            [clj-time.format :as format]
+            [clojure.tools.logging :as log])
+  (:import org.postgresql.util.PGobject
+           org.postgresql.jdbc4.Jdbc4Array
+           clojure.lang.IPersistentMap
+           clojure.lang.IPersistentVector
+           [java.sql
+            BatchUpdateException
+            Date
+            Timestamp
+            PreparedStatement]))
 
 (def ^{:const true}
-  keys-to-convert [:total-cost
-                   :usage-quantity
-                   :blended-rate
-                   :credits
-                   :cost-before-tax])
+  numeric-fields-to-convert
+  [:total-cost
+   :usage-quantity
+   :blended-rate
+   :credits
+   :cost-before-tax
+   :record-id])
+
+(def ^{:const true}
+  date-fields-to-convert
+  [:usage-start-date
+   :usage-end-date
+   :invoice-date
+   :billing-period-start-date
+   :billing-period-end-date])
 
 (def ^{:const true}
   cost-columns
@@ -40,7 +62,7 @@
       :or {config-file (io/resource "dev-config.edn")}}]
   (let [config (utils/load-config config-file)
         csv-path (:costs-csv config)]
-    (utils/csv-filtered-converted csv-path cost-columns keys-to-convert)))
+    (utils/csv-filtered-converted csv-path cost-columns numeric-fields-to-convert)))
 
 (defn get-ec2-instance-name
   [line-item]
@@ -99,6 +121,58 @@
 
 (defn costs->database-rows
   [cost-rows snapshot-id]
-  (let [filtered
-        (utils/filter-maps cost-rows :record-type "LinkedLineItem" :not=)]
+  (let [filtered (utils/filter-maps cost-rows :record-type "LinkedLineItem" :not=)]
     (utils/decorate-with-snapshot-id snapshot-id (utils/rows->snake-cased filtered))))
+
+(defn- mk-snapshot-rec
+  []
+  (let [snapshot {:table_name  "cost_snapshots"
+                  :snapshot_id (utils/random-uuid)
+                  :title       "cost snapshot"}]
+    (first (sandy-db/create-snapshot snapshot))))
+
+(def date-formatter
+  (format/formatter "yyyy/MM/dd HH:mm:SS"))
+
+(defn cost-date-to-date
+  "convert standard date string to timestamp"
+  [date-string]
+  (cond
+    (clojure.string/blank? date-string) (format/parse date-formatter "1970/01/01 00:00:00")
+    :else (format/parse date-formatter date-string)))
+
+(defn date-to-timestamp
+  [dt]
+  (try
+    (java.sql.Timestamp. (.getMillis dt))
+    (catch Exception e 0)))
+
+(defn date-converter
+  "Syntactic sugar for string-to-to timestamp conversion"
+  [datestring]
+  (->> datestring
+       cost-date-to-date
+       date-to-timestamp))
+
+(defn convert-dates [m ks]
+  (utils/map-values m ks date-converter))
+
+(defn csv->database-rows
+  [csv]
+  (let [rows      (utils/csv-filtered-converted csv cost-columns numeric-fields-to-convert)
+        filtered  (utils/filter-maps rows :record-type "LinkedLineItem" :not=)
+        _ (log/debug (str "filtered CSV rows: " (count filtered)))
+
+        formatted (map #(convert-dates % date-fields-to-convert) filtered)
+        _ (log/debug (str "formatted CSV rows: " (count formatted)))
+
+        snapshot  (mk-snapshot-rec)
+        _ (log/debug (str "snapshot: " snapshot))
+
+        decorated (utils/decorate-with-snapshot-id
+                   (:id snapshot) (utils/rows->snake-cased formatted))
+        _ (log/debug (str "decorated CSV rows: " (count decorated)))
+
+        res (map #(sandy-db/create-cost-snapshot! %) decorated)
+        _ (log/debug (str "cost snapshots created: " (count res)))]
+    res))
