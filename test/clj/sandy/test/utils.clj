@@ -1,6 +1,7 @@
 (ns sandy.test.utils
   (:require [sandy.utils :refer :all]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all]
+            [clj-time.core :as t]))
 
 (def sample-row
   {:usage-quantity     "13997.0"
@@ -104,3 +105,54 @@
     (is (= 0.0 (safe-divide 0 0)))
     (is (= Double/NEGATIVE_INFINITY (safe-divide -100 0)))
     (is (= Double/POSITIVE_INFINITY (safe-divide 100 0)))))
+
+(def test-csv-row
+  {:usage-quantity         13.0
+   :total-cost                0.63
+   :item-description          "r3.xlarge Linux/UNIX Spot Instance-hour in US East (Virginia) in VPC Zone #12"
+   :operation                 "RunInstances:SV012"
+   :invoice-date              "2017/05/29 17:02:32"
+   :usage-end-date            "2017/05/25 05:00:00"
+   :product-name              "Amazon Elastic Compute Cloud"
+   :credits                   0.0
+   :blended-rate              0.0
+   :billing-period-start-date "2017/05/01 00:00:00"
+   :usage-type                "SpotUsage:r3.xlarge"
+   :product-code              "AmazonEC2"
+   :rate-id                   "24954279"
+   :usage-start-date          "2017/05/03 02:00:00"
+   :billing-period-end-date   "2017/05/31 23:59:59"
+   :record-id                 2.20000003E18
+   :cost-before-tax           0.63
+   :record-type               "PayerLineItem"}
+  )
+
+(deftest date-formatter-converts-strings-to-dates
+  (testing "Given a date string, can get a Joda date object"
+    (let [expected-datetime (t/date-time 2017 05 25 5 0 00 000)]
+      (is (= expected-datetime (datestring->date (:usage-end-date test-csv-row)))))))
+
+(deftest date-formatter-handles-bad-data
+  (testing "Given a blank string, can get a default date object"
+    (let [expected-datetime (t/date-time 1970 01 01 0 0 00 000)]
+      (is (= expected-datetime (datestring->date ""))))))
+
+(deftest datestring->timestamp-converts-string-to-timestamp
+  (testing "Given a date string, can convert to a SQL timestamp"
+    (let [expected-datetime (t/date-time 2017 05 31 23 59 00 590)
+          expected-ts (java.sql.Timestamp. (.getMillis expected-datetime))]
+      (is (= expected-ts (datestring->timestamp (:billing-period-end-date test-csv-row)))))))
+
+(deftest datestring->timestamp-handles-bad-datatype
+  (testing "Given a value that is not a date, datestring->timestamp returns default value"
+    (let [expected-datetime (t/date-time 1970 01 01 0 0 00 000)
+          expected-ts (java.sql.Timestamp. (.getMillis expected-datetime))]
+    (is (= expected-ts (datestring->timestamp "foo"))))))
+
+(deftest convert-dates-turns-specified-values-into-date-objects
+  (testing "Given map & specified keys, returns date objects for relevant values"
+    (let [sut (convert-dates test-csv-row [:usage-end-date :usage-start-date])
+          expected-end-date (datestring->timestamp "2017/05/25 05:00:00")
+          expected-billing-date "2017/05/31 23:59:59"]
+      (is (= expected-end-date (:usage-end-date sut)))
+      (is (= expected-billing-date (:billing-period-end-date sut))))))

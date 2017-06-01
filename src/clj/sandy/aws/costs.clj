@@ -5,7 +5,6 @@
             [camel-snake-kebab.extras :refer [transform-keys]]
             [sandy.utils :as utils]
             [sandy.db.core :as sandy-db]
-            [clj-time.format :as format]
             [clojure.tools.logging :as log])
   (:import org.postgresql.util.PGobject
            org.postgresql.jdbc4.Jdbc4Array
@@ -131,39 +130,13 @@
                   :title       "cost snapshot"}]
     (first (sandy-db/create-snapshot snapshot))))
 
-(def date-formatter
-  (format/formatter "yyyy/MM/dd HH:mm:SS"))
-
-(defn cost-date-to-date
-  "convert standard date string to timestamp"
-  [date-string]
-  (cond
-    (clojure.string/blank? date-string) (format/parse date-formatter "1970/01/01 00:00:00")
-    :else (format/parse date-formatter date-string)))
-
-(defn date-to-timestamp
-  [dt]
-  (try
-    (java.sql.Timestamp. (.getMillis dt))
-    (catch Exception e 0)))
-
-(defn date-converter
-  "Syntactic sugar for string-to-to timestamp conversion"
-  [datestring]
-  (->> datestring
-       cost-date-to-date
-       date-to-timestamp))
-
-(defn convert-dates [m ks]
-  (utils/map-values m ks date-converter))
-
 (defn csv->database-rows
   [csv]
   (let [rows      (utils/csv-filtered-converted csv cost-columns numeric-fields-to-convert)
         filtered  (utils/filter-maps rows :record-type "LinkedLineItem" :not=)
         _ (log/debug (str "filtered CSV rows: " (count filtered)))
 
-        formatted (map #(convert-dates % date-fields-to-convert) filtered)
+        formatted (map #(utils/convert-dates % date-fields-to-convert) filtered)
         _ (log/debug (str "formatted CSV rows: " (count formatted)))
 
         snapshot  (mk-snapshot-rec)

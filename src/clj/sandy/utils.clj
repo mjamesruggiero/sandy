@@ -3,7 +3,8 @@
             [clojure.edn :as edn]
             [camel-snake-kebab.core :refer :all]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clj-time.format :as format]))
 
 (defn get-csv
   [filepath]
@@ -100,3 +101,33 @@
 
 (defn random-uuid []
   (str (java.util.UUID/randomUUID)))
+
+(def date-formatter
+  (format/formatter "yyyy/MM/dd HH:mm:SS"))
+
+(defn datestring->date
+  "convert standard date string to timestamp"
+  [date-string]
+  (try
+    (format/parse date-formatter date-string)
+    (catch Exception e (format/parse date-formatter "1970/01/01 00:00:00"))))
+
+(defn- date-to-timestamp
+  "Convert date object to timestamp"
+  [dt]
+  (try
+    (java.sql.Timestamp. (.getMillis dt))
+    (catch Exception e 0)))
+
+(defn datestring->timestamp
+  "Syntactic sugar for string-to-to timestamp conversion"
+  [datestring]
+  (->> datestring
+       datestring->date
+       date-to-timestamp))
+
+(defn convert-dates
+  "Take map and keys and convert relevant values
+  to timestamps"
+  [m ks]
+  (map-values m ks datestring->timestamp))
