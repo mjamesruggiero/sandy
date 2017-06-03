@@ -64,6 +64,8 @@
   (map flatten-instance instances))
 
 (defn instances->database-rows
+  "Flatten instances, retain needed fields,
+  make keys snake-cased, decorate with snapshot id"
   [instances snapshot-id]
   (let [flattened (-> instances
                       (flatten-instances)
@@ -71,26 +73,28 @@
                       (utils/rows->snake-cased))]
     (utils/decorate-with-snapshot-id snapshot-id flattened)))
 
-(defn- create-instance-shapshot
-  "Create snapshot record with instance metadata"
+(defn- create-snapshot-record
+  "Create with instance metadata"
   []
   (let [snapshot {:table_name  "instance_snapshots"
                   :snapshot_id (utils/random-uuid)
                   :title       "instance snapshots"}]
     (first (sandy-db/create-snapshot snapshot))))
 
+(defn- decorate-with-snapshot-id
+  "Transform instances to database rows,
+  create snapshot and decorate rows"
+  [rows]
+  (let [snapshot (create-snapshot-record)]
+    (instances->database-rows rows (:id snapshot))))
+
 (defn mk-instance-snapshot
   "Grab all the instances and generate
   rows (the essence of a snapshot)"
   []
-  (let [records (instances)
-        snapshot-rec (create-instance-shapshot)
-        _ (log/debug (str "created a snapshot: " (first snapshot-rec)))
-        transformed (instances->database-rows records (:id snapshot-rec))
-        _ (log/debug (str "number of transformed records: " (count transformed)))
-        records (map #(sandy-db/create-instance-snapshot %) transformed)
-        _ (log/debug (str "inserted records: " (count records)))]
-    records))
+  (let [transformed (-> (instances)
+                        (decorate-with-snapshot-id))]
+        (map #(sandy-db/create-instance-snapshot %) transformed)))
 
 (defn mk-instance-snapshot->future
   "Wrap #mk-instance-snapshot in a future"
