@@ -71,7 +71,8 @@
                       (utils/rows->snake-cased))]
     (utils/decorate-with-snapshot-id snapshot-id flattened)))
 
-(defn- mk-snapshot-rec
+(defn- create-instance-shapshot
+  "Create snapshot record with instance metadata"
   []
   (let [snapshot {:table_name  "instance_snapshots"
                   :snapshot_id (utils/random-uuid)
@@ -83,13 +84,13 @@
   rows (the essence of a snapshot)"
   []
   (let [records (instances)
-        snapshot-rec (mk-snapshot-rec)
+        snapshot-rec (create-instance-shapshot)
         _ (log/debug (str "created a snapshot: " (first snapshot-rec)))
         transformed (instances->database-rows records (:id snapshot-rec))
         _ (log/debug (str "number of transformed records: " (count transformed)))
-        res (map #(sandy-db/create-instance-snapshot %) transformed)
-        _ (log/debug (str "inserted records: " (count res)))]
-    res))
+        records (map #(sandy-db/create-instance-snapshot %) transformed)
+        _ (log/debug (str "inserted records: " (count records)))]
+    records))
 
 (defn mk-instance-snapshot->future
   "Wrap #mk-instance-snapshot in a future"

@@ -5,16 +5,7 @@
             [camel-snake-kebab.extras :refer [transform-keys]]
             [sandy.utils :as utils]
             [sandy.db.core :as sandy-db]
-            [clojure.tools.logging :as log])
-  (:import org.postgresql.util.PGobject
-           org.postgresql.jdbc4.Jdbc4Array
-           clojure.lang.IPersistentMap
-           clojure.lang.IPersistentVector
-           [java.sql
-            BatchUpdateException
-            Date
-            Timestamp
-            PreparedStatement]))
+            [clojure.tools.logging :as log]))
 
 (def ^{:const true}
   numeric-fields-to-convert
@@ -72,7 +63,7 @@
   "Decorates cost row with a useful cost value"
   [row]
   (let [cost-per-hour (utils/safe-divide (get row :cost-before-tax 0)
-                                   (get row :usage-quantity 1))]
+                                         (get row :usage-quantity 1))]
     (assoc row :cost-per-hour cost-per-hour)))
 
 (defn decorate-row-with-instance-name
@@ -118,34 +109,41 @@
   [costs]
   (utils/sum-by-key costs :product-name :total-cost))
 
-(defn costs->database-rows
-  [cost-rows snapshot-id]
-  (let [filtered (utils/filter-maps cost-rows :record-type "LinkedLineItem" :not=)]
-    (utils/decorate-with-snapshot-id snapshot-id (utils/rows->snake-cased filtered))))
+(defn transform-rows
+  "Filter out unwanted CSV rows,
+  convert date values,
+  and convert keys to snake-case"
+  [rows]
+  (let [filtered       (utils/filter-maps rows :record-type "LinkedLineItem" :not=)
+        date-converted (map #(utils/convert-dates % date-fields-to-convert) filtered)]
+    (utils/rows->snake-cased date-converted)))
 
-(defn- mk-snapshot-rec
-  []
-  (let [snapshot {:table_name  "cost_snapshots"
-                  :snapshot_id (utils/random-uuid)
-                  :title       "cost snapshot"}]
-    (first (sandy-db/create-snapshot snapshot))))
+(defn- fetch-csv
+  "Open CSV, remove unwanted columns
+  and convert numeric values to doubles"
+  [csv]
+  (utils/csv-filtered-converted csv cost-columns numeric-fields-to-convert))
+
+(defn- create-cost-snapshot []
+  "Create database record for snapshot"
+  (first (sandy-db/create-snapshot {:table_name  "cost_snapshots"
+                                    :snapshot_id (utils/random-uuid)
+                                    :title       "cost snapshot"})))
+
+(defn- decorate-with-snapshot-id
+  "Creates snapshot record (side-effecting)
+  and decorates the rows with the id.
+  TODO might be better handled in transaction"
+  [rows]
+  (let [snapshot (create-cost-snapshot)]
+    (utils/decorate-with-snapshot-id (:id snapshot) rows)))
 
 (defn csv->database-rows
-  [csv]
-  (let [rows      (utils/csv-filtered-converted csv cost-columns numeric-fields-to-convert)
-        filtered  (utils/filter-maps rows :record-type "LinkedLineItem" :not=)
-        _ (log/debug (str "filtered CSV rows: " (count filtered)))
-
-        formatted (map #(utils/convert-dates % date-fields-to-convert) filtered)
-        _ (log/debug (str "formatted CSV rows: " (count formatted)))
-
-        snapshot  (mk-snapshot-rec)
-        _ (log/debug (str "snapshot: " snapshot))
-
-        decorated (utils/decorate-with-snapshot-id
-                   (:id snapshot) (utils/rows->snake-cased formatted))
-        _ (log/debug (str "decorated CSV rows: " (count decorated)))
-
-        res (map #(sandy-db/create-cost-snapshot! %) decorated)
-        _ (log/debug (str "cost snapshots created: " (count res)))]
-    res))
+  "Given a CSV, parse, reformat, add a
+  snapshot id and insert into the database"
+  [filepath]
+  (let [rows (-> filepath
+                 (fetch-csv)
+                 (transform-rows)
+                 (decorate-with-snapshot-id))]
+    (map #(sandy-db/create-cost-snapshot! %) rows)))
