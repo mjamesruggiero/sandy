@@ -147,21 +147,21 @@
     (let [keys-from-first-element
           (set (keys  (first (sut/transform-rows test-rows-to-filter))))
           expected-keys #{:usage_quantity
-            :total_cost
-            :item_description
-            :operation
-            :invoice_date
-            :usage_end_date
-            :product_name
-            :credits
-            :blended_rate
-            :billing_period_start_date
-            :usage_type
-            :product_code
-            :rate_id
-            :usage_start_date
-            :billing_period_end_date
-            :record_id
-            :cost_before_tax
+                          :total_cost
+                          :item_description
+                          :operation
+                          :invoice_date
+                          :usage_end_date
+                          :product_name
+                          :credits
+                          :blended_rate
+                          :billing_period_start_date
+                          :usage_type
+                          :product_code
+                          :rate_id
+                          :usage_start_date
+                          :billing_period_end_date
+                          :record_id
+                          :cost_before_tax
                           :record_type }]
       (is (= expected-keys keys-from-first-element)))))
