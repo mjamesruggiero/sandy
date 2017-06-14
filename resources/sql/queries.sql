@@ -131,7 +131,7 @@ availability_zone
 )
 VALUES :tuple*:instance_snapshots
 
--- :name most-recent-instance-snapshot :? :1
+-- :name most-recent-instance-snapshot :? :*
 -- :doc finds the last instance snapshot
 SELECT COUNT(*) as count, project
 FROM instance_snapshots

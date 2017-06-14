@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="ui container">
-    <h1 class="ui header">Most recent instance snapshot<h1>
+<div class="main ui container">
+  <h1 class="ui header">Most recent instance snapshot</h1>
+  <div class="ui grid container">
+    <table class="ui celled table">
+      {% for item in results %}
+      <tr>
+        <td>{{item.project}}</td>
+        <td class="right aligned">{{item.count}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
 </div>
 {% endblock %}

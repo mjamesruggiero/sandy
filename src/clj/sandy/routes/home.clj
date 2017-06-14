@@ -1,14 +1,15 @@
 (ns sandy.routes.home
   (:require [sandy.layout :as layout]
             [sandy.db.core :refer [find-instance-snapshot
-                                   find-cost-snapshot]]
+                                   find-cost-snapshot
+                                   most-recent-instance-snapshot]]
             [compojure.core :refer [defroutes GET]]
             [ring.util.http-response :as response]
             [clojure.java.io :as io]))
 
 (defn home-page []
   (layout/render
-    "home.html" {:docs (-> "docs/docs.md" io/resource slurp)}))
+    "home.html" {:results (most-recent-instance-snapshot)}))
 
 (defn instance-snapshots-page [id rows]
   (layout/render

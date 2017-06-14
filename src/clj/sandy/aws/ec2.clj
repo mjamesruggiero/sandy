@@ -92,8 +92,7 @@
   "Grab all the instances and generate
   rows (the essence of a snapshot)"
   []
-  (let [transformed (-> (instances)
-                        (decorate-with-snapshot-id))]
+  (let [transformed (decorate-with-snapshot-id (instances))]
         (map #(sandy-db/create-instance-snapshot %) transformed)))
 
 (defn mk-instance-snapshot->future
