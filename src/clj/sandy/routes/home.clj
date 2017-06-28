@@ -2,7 +2,8 @@
   (:require [sandy.layout :as layout]
             [sandy.db.core :refer [find-instance-snapshot
                                    find-cost-snapshot
-                                   most-recent-instance-snapshot]]
+                                   most-recent-instance-snapshot
+                                   instances-missing-project-tags]]
             [compojure.core :refer [defroutes GET]]
             [ring.util.http-response :as response]
             [clojure.java.io :as io]))
@@ -14,6 +15,10 @@
 (defn instance-snapshots-page [id rows]
   (layout/render
    "instance-snapshots.html" {:id id :snapshot-rows rows}))
+
+(defn fetch-instances-missing-projects []
+  (layout/render
+   "instances-missing-projects.html" {:results (instances-missing-project-tags)}))
 
 (defn cost-snapshots-page [id rows]
   (layout/render
@@ -36,6 +41,7 @@
 
 (defroutes home-routes
   (GET "/" [] (home-page))
+  (GET "/missing" [] (fetch-instances-missing-projects))
   (GET "/instances/:id" [id] (fetch-instance-snapshot id))
   (GET "/costs/:id" [id] (fetch-cost-snapshot id))
   (GET "/about" [] (about-page)))

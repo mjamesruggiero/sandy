@@ -144,3 +144,21 @@ ORDER by created_at DESC limit 1
 )
 GROUP BY project
 ORDER by project ASC;
+
+-- :name instances-missing-project-tags :? :*
+-- :doc details of the last instance snapshot
+SELECT
+instance_type,
+instance_id,
+project, name, stages, availability_zone
+FROM instance_snapshots
+WHERE snapshot_id =
+(
+SELECT id
+FROM snapshots
+WHERE table_name = 'instance_snapshots'
+ORDER by created_at DESC limit 1
+)
+AND project = 'n/a'
+AND name not LIKE 'vpc%'
+ORDER by instance_type ASC;
